@@ -6,3 +6,6 @@ requests
 websockets
 pymysql
 sqlalchemy
+beautifulsoup4
+selenium
+webdriver-manager

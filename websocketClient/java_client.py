@@ -23,7 +23,7 @@ class JavaWebSocketClient:
                 async with websockets.connect(self.JAVA_WS_URL) as websocket:
                     self._websocket = websocket
                     self._connected = True
-                    print("✅ 已连接 Java WebSocket")
+                    print("已连接 Java WebSocket")
 
                     # 上线通知
                     await self.send({
@@ -38,7 +38,7 @@ class JavaWebSocketClient:
             except Exception as e:
                 self._connected = False
                 self._websocket = None
-                print(f"❌ 连接断开，5秒后重连: {e}")
+                print(f"连接断开，5秒后重连: {e}")
                 await asyncio.sleep(5)
 
     # 收到消息处理
