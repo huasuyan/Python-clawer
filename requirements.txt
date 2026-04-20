@@ -1,8 +1,3 @@
-# Python-clawer
-
-Python爬虫仓库
-
-项目依赖库(requirements.txt)
 fastapi
 uvicorn
 pydantic_settings
