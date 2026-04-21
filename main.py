@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from common.result import Result
 from config.settings import settings
-# from controller.user_controller import router as user_router
 from common.exception import global_exception_handler, http_exception_handler
-from websocket.java_client import start_java_client,java_ws
+from websocketClient.java_client import start_java_client,java_ws
+from controller.crawler_controller import router as crawler_router
 
 
 # 全局生命周期管理
@@ -46,7 +46,8 @@ app.add_middleware(
 )
 
 # 注册路由
-# app.include_router(user_router)
+app.include_router(crawler_router)
+
 
 
 # 根接口

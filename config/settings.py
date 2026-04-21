@@ -8,23 +8,28 @@ class Settings(BaseSettings):
     # 服务配置
     SERVER_HOST: str = "0.0.0.0"
     SERVER_PORT: int = 8088
-    # 跨域配置（修复版，自动解析逗号分隔字符串）
+    # 跨域配置
     CORS_ORIGINS: str = "*"
     # websocket服务器地址
-    WEBSOCKET_SERVER = "ws://localhost:8080/ws/python"
+    WEBSOCKET_SERVER: str = "ws://localhost:8080/ws/python"
     # Mysql
-    DB_HOST = "localhost"
-    DB_PORT = 3306
-    DB_USER = "root"
-    DB_PASSWORD = "你的密码"
-    DB_NAME = "你的数据库名"
-    # 数据库连接地址
-    SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DB_HOST: str
+    DB_PORT: int = 3306
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_NAME: str
 
+    # 天行数据API配置
+    TIANAPI_KEY: str = ""  # 天行数据API密钥
 
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'
+
+    @property
+    def SQLALCHEMY_DATABASE_URL(self) -> str:
+        """动态构建数据库连接URL"""
+        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 # 初始化配置
 settings = Settings()
