@@ -1,7 +1,18 @@
-from fastapi import APIRouter, HTTPException
+import json
+import logging
+
+from fastapi import APIRouter, HTTPException, Depends
+
+from common.none_state import CrawlerNoneTaskState, NONE_STATE_TEXT
+from common.result import Result
+from entity.crawler_model import CrawlerNone
 from entity.crawler_request import CrawlerIntegrationRequest
 from service.tianapi_crawler_service import TianApiCrawlerService
 from config.settings import settings
+from config.db import get_db
+from sqlalchemy.orm import Session
+
+from websocketClient.java_client import java_ws
 
 router = APIRouter(prefix="/api/python/crawler", tags=["爬虫接口"])
 
@@ -14,13 +25,14 @@ def get_crawler_service():
     global crawler_service
     if crawler_service is None:
         if not settings.TIANAPI_KEY:
+            logging.error("请配置天行数据API！")
             raise HTTPException(status_code=500, detail="天行数据API密钥未配置")
         crawler_service = TianApiCrawlerService(api_key=settings.TIANAPI_KEY)
     return crawler_service
 
 
 @router.post("/runIntegration")
-async def run_integration(request: CrawlerIntegrationRequest):
+async def run_integration(request: CrawlerIntegrationRequest,db: Session = Depends(get_db)):
     """
     整合爬虫接口
 
@@ -36,9 +48,7 @@ async def run_integration(request: CrawlerIntegrationRequest):
 
     示例：
     {
-        "key_word": "科技",
-        "sources": ["综合", "社会"],
-        "page": 2
+        "crawler_id":1,
     }
 
     返回格式：
@@ -54,12 +64,57 @@ async def run_integration(request: CrawlerIntegrationRequest):
         # 获取服务实例
         service = get_crawler_service()
 
+        # 获取爬虫信息
+        crawlerInfo = db.query(CrawlerNone).filter(CrawlerNone.crawler_id == request.crawler_id).first()
+        if not crawlerInfo:
+            return Result.error(msg="未找到对应手动检索任务！")
+
+        if crawlerInfo.state != CrawlerNoneTaskState.CREATED :
+            return Result.error(msg=f"手动检索任务状态错误：要求状态为{NONE_STATE_TEXT[CrawlerNoneTaskState.CREATED]},当前状态为：{NONE_STATE_TEXT[crawlerInfo.state]}！")
+
+        # 读取参数
+        params_dict = crawlerInfo.params
+        sources = list(params_dict.get("sources"))
+        page = int(params_dict.get("page"))
+
+        # 设置爬取状态
+        crawler_old_state = crawlerInfo.state
+        crawlerInfo.state = CrawlerNoneTaskState.CRAWLING
+        db.add(crawlerInfo)
+        db.commit()
+
+        # websocket给java发消息
+        ws_msg = {
+            "type": "crawler_none_state_change",
+            "crawler_id": request.crawler_id,
+            "crawler_name": crawlerInfo.crawler_name,
+            "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
+            "crawler_new_state": NONE_STATE_TEXT[CrawlerNoneTaskState.CRAWLING]
+        }
+        await java_ws.send(ws_msg)
+
         # 执行爬取
         news_list = service.crawl_integration(
-            key_word=request.key_word,
-            sources=request.sources,
-            page=request.page
+            key_word=crawlerInfo.key_word,
+            sources=sources,
+            page=page
         )
+
+        # 设置爬取状态
+        crawler_old_state = CrawlerNoneTaskState.CRAWLING
+        crawlerInfo.state = CrawlerNoneTaskState.CLEANING
+        db.add(crawlerInfo)
+        db.commit()
+
+        # websocket给java发消息
+        ws_msg = {
+            "type": "crawler_none_state_change",
+            "crawler_id": request.crawler_id,
+            "crawler_name": crawlerInfo.crawler_name,
+            "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
+            "crawler_new_state": NONE_STATE_TEXT[CrawlerNoneTaskState.CLEANING]
+        }
+        await java_ws.send(ws_msg)
 
         # 转换为字典列表
         data_list = [news.model_dump() for news in news_list]
