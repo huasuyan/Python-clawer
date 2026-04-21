@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
 
+    # 天行数据API配置
+    TIANAPI_KEY: str = ""  # 天行数据API密钥
+
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'

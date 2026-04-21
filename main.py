@@ -8,7 +8,7 @@ from common.result import Result
 from config.settings import settings
 from common.exception import global_exception_handler, http_exception_handler
 from websocketClient.java_client import start_java_client,java_ws
-from controller.xinhua_controller import router as xinhua_router
+from controller.crawler_controller import router as crawler_router
 
 
 # 全局生命周期管理
@@ -46,7 +46,7 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(xinhua_router)
+app.include_router(crawler_router)
 
 
 
