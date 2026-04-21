@@ -4,12 +4,16 @@ from typing import List, Optional
 
 class CrawlerIntegrationRequest(BaseModel):
     """爬虫整合请求参数"""
-    
-    key_word: str = Field(..., description="检索关键词")
-    
-    sources: List[str] = Field(..., description="数据源列表，可选值：['综合', '社会']")
-    
-    page: int = Field(1, ge=1, description="获取多少页的内容")
+
+    # user_id: int = Field(..., description="用户ID")
+
+    crawler_id: int = Field(..., description="爬虫ID")
+
+    # key_word: str = Field(..., description="检索关键词")
+    #
+    # sources: List[str] = Field(..., description="数据源列表，可选值：['综合', '社会']")
+    #
+    # page: int = Field(1, ge=1, description="获取多少页的内容")
 
 
 class NewsItem(BaseModel):
