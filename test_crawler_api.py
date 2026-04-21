@@ -119,15 +119,14 @@ def test_single_source(keyword, source, page=1):
         return False, []
 
 
-def test_multiple_sources(keyword, sources, page=2):
+def test_multiple_sources(crawler_id):
     """测试多个数据源"""
-    print_section(f"测试: 多数据源 - 关键词'{keyword}', 页数{page}")
+    print_section(f"测试: 多数据源 - 任务ID：{crawler_id}")
 
     data = {
-        "key_word": keyword,
-        "sources": sources,
-        "page": page
+        "crawler_id": crawler_id,
     }
+
 
     print(f"请求参数: {json.dumps(data, ensure_ascii=False)}")
 
@@ -257,7 +256,7 @@ def run_all_tests():
 
     # 测试4: 多数据源
     print_header("测试4: 多数据源整合")
-    success, data = test_multiple_sources("经济", ["综合", "社会"], page=2)
+    success, data = test_multiple_sources(1)
     results.append(("多数据源", success))
     if data:
         save_result(data, f"test_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
@@ -290,31 +289,16 @@ def interactive_test():
     """交互式测试"""
     print_header("交互式测试模式")
 
-    keyword = input("请输入关键词 (默认: 科技): ").strip() or "科技"
+    crawler_id = int(input("请输入爬虫ID (默认: 1): ").strip()) or 1
 
-    print("\n选择数据源:")
-    print("  1. 综合")
-    print("  2. 社会")
-    print("  3. 综合+社会")
-    choice = input("请选择 (1/2/3, 默认: 3): ").strip() or "3"
-
-    if choice == "1":
-        sources = ["综合"]
-    elif choice == "2":
-        sources = ["社会"]
-    else:
-        sources = ["综合", "社会"]
-
-    page = input("请输入页数 (默认: 1): ").strip() or "1"
-    page = int(page)
 
     print_section("开始测试")
-    success, data = test_multiple_sources(keyword, sources, page)
+    success, data = test_multiple_sources(crawler_id)
 
     if success and data:
         save_choice = input("\n是否保存结果? (y/n): ").strip().lower()
         if save_choice == 'y':
-            filename = f"test_result_{keyword}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            filename = f"test_result_{crawler_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             save_result(data, filename)
 
 

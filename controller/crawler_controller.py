@@ -86,6 +86,7 @@ async def run_integration(request: CrawlerIntegrationRequest,db: Session = Depen
         # websocket给java发消息
         ws_msg = {
             "type": "crawler_none_state_change",
+            "user_id": crawlerInfo.user_id,
             "crawler_id": request.crawler_id,
             "crawler_name": crawlerInfo.crawler_name,
             "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
@@ -109,6 +110,7 @@ async def run_integration(request: CrawlerIntegrationRequest,db: Session = Depen
         # websocket给java发消息
         ws_msg = {
             "type": "crawler_none_state_change",
+            "user_id": crawlerInfo.user_id,
             "crawler_id": request.crawler_id,
             "crawler_name": crawlerInfo.crawler_name,
             "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
