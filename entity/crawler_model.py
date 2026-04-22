@@ -1,6 +1,45 @@
-from sqlalchemy import Column, Integer, BigInteger, String, DateTime, JSON
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, JSON, Text
 from sqlalchemy.sql import func
 from config.db import Base  # 导入你之前定义的 Base 基类
+
+
+class SpecialReportSetting(Base):
+    __tablename__ = "special_report_setting"
+
+    special_report_id = Column(BigInteger, primary_key=True, nullable=False, comment="专题报告ID")
+    monitor_keywords = Column(JSON, nullable=False, comment="监控关键词")
+    params = Column(JSON, nullable=False, comment="参数配置")
+    data_source = Column(String(500), nullable=False, comment="数据源")
+
+
+class SpecialAlertSetting(Base):
+    __tablename__ = "special_alert_setting"
+
+    alert_id = Column(Integer, primary_key=True, nullable=False, comment="预警ID")
+    key_word = Column(JSON, nullable=False, comment="关键词")
+    params = Column(JSON, nullable=False, comment="参数配置")
+    target_source = Column(String(20), nullable=False, comment="目标数据源")
+
+
+class NewsData(Base):
+    __tablename__ = "news_data"
+
+    news_id = Column(BigInteger, primary_key=True, autoincrement=True, comment="新闻ID")
+    special_report_id = Column(BigInteger, nullable=True, comment="专题报告ID")
+    alert_id = Column(BigInteger, nullable=True, comment="预警ID")
+    title = Column(String(500), nullable=True, comment="标题")
+    content = Column(Text, nullable=True, comment="内容")
+    video = Column(String(1000), nullable=True, comment="视频")
+    platform = Column(String(100), nullable=True, comment="平台")
+    source = Column(String(100), nullable=True, comment="来源")
+    publisher = Column(String(100), nullable=True, comment="发布者")
+    publish_time = Column(DateTime, nullable=True, comment="发布时间")
+    comment = Column(Integer, nullable=True, comment="评论数")
+    region = Column(String(100), nullable=True, comment="地区")
+    original_url = Column(String(1000), nullable=True, comment="原始URL")
+    article_type = Column(String(100), nullable=True, comment="文章类型")
+    source_url = Column(String(500), nullable=True, comment="来源URL")
+    create_time = Column(DateTime, nullable=False, server_default=func.current_timestamp(), comment="创建时间")
 
 
 class CrawlerNone(Base):
