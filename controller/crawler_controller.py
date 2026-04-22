@@ -132,8 +132,8 @@ async def run_integration(request: CrawlerIntegrationRequest,db: Session = Depen
             if not crawlerInfo:
                 return Result.error(msg="未找到对应舆情预警任务！")
 
-            if crawlerInfo.state != CrawlerCronTaskState.WAITTING :
-                return Result.error(msg=f"舆情预警任务状态错误：要求状态为{CRON_STATE_TEXT[CrawlerCronTaskState.WAITTING]},当前状态为：{CRON_STATE_TEXT[crawlerInfo.state]}！")
+            if crawlerInfo.state != CrawlerCronTaskState.WAITTING and crawlerInfo.state != CrawlerCronTaskState.FAILED:
+                return Result.error(msg=f"舆情预警任务状态错误：要求状态为{CRON_STATE_TEXT[CrawlerCronTaskState.WAITTING]}/{CRON_STATE_TEXT[CrawlerCronTaskState.FAILED]},当前状态为：{CRON_STATE_TEXT[crawlerInfo.state]}！")
 
             # 读取参数
             params_dict = crawlerInfo.params
