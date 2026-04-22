@@ -5,9 +5,9 @@ from typing import List, Optional
 class CrawlerIntegrationRequest(BaseModel):
     """爬虫整合请求参数"""
 
-    crawler_id: int = Field(..., description="爬虫ID")
+    task_id: int = Field(..., description="任务ID")
 
-    crawler_way: str = Field(..., description="任务模式")
+    task_way: str = Field(..., description="任务类型: report/alert")
 
 
 class NewsItem(BaseModel):
