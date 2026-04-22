@@ -10,6 +10,16 @@ class Result:
         }
 
     @staticmethod
+    def successDataList(dataList: Any = None, msg: str = "success") -> dict:
+        return {
+            "code": 1,
+            "msg": msg,
+            "data": {
+                "dataList": dataList
+            }
+        }
+
+    @staticmethod
     def error(msg: str = "error", data: Any = None, code: int = 0) -> dict:
         return {
             "code": code,

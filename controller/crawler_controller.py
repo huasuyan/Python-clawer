@@ -3,15 +3,16 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from common.none_state import CrawlerNoneTaskState, NONE_STATE_TEXT
+from common.crawler_state import CrawlerNoneTaskState, NONE_STATE_TEXT, CrawlerCronTaskState, CRON_STATE_TEXT
 from common.result import Result
-from entity.crawler_model import CrawlerNone
+from entity.crawler_model import CrawlerNone, CrawlerCron
 from entity.crawler_request import CrawlerIntegrationRequest
 from service.tianapi_crawler_service import TianApiCrawlerService
 from config.settings import settings
 from config.db import get_db
 from sqlalchemy.orm import Session
 
+from utils.tools import merge_unique_news, list_intersect
 from websocketClient.java_client import java_ws
 
 router = APIRouter(prefix="/api/python/crawler", tags=["爬虫接口"])
@@ -64,71 +65,141 @@ async def run_integration(request: CrawlerIntegrationRequest,db: Session = Depen
         # 获取服务实例
         service = get_crawler_service()
 
-        # 获取爬虫信息
-        crawlerInfo = db.query(CrawlerNone).filter(CrawlerNone.crawler_id == request.crawler_id).first()
-        if not crawlerInfo:
-            return Result.error(msg="未找到对应手动检索任务！")
+        if request.crawler_way == "none":
+            # 获取爬虫信息
+            crawlerInfo = db.query(CrawlerNone).filter(CrawlerNone.crawler_id == request.crawler_id).first()
+            if not crawlerInfo:
+                return Result.error(msg="未找到对应手动检索任务！")
 
-        if crawlerInfo.state != CrawlerNoneTaskState.CREATED :
-            return Result.error(msg=f"手动检索任务状态错误：要求状态为{NONE_STATE_TEXT[CrawlerNoneTaskState.CREATED]},当前状态为：{NONE_STATE_TEXT[crawlerInfo.state]}！")
+            if crawlerInfo.state != CrawlerNoneTaskState.CREATED :
+                return Result.error(msg=f"手动检索任务状态错误：要求状态为{NONE_STATE_TEXT[CrawlerNoneTaskState.CREATED]},当前状态为：{NONE_STATE_TEXT[crawlerInfo.state]}！")
 
-        # 读取参数
-        params_dict = crawlerInfo.params
-        sources = list(params_dict.get("sources"))
-        page = int(params_dict.get("page"))
+            # 读取参数
+            params_dict = crawlerInfo.params
+            sources = list(params_dict.get("sources"))
+            page = int(params_dict.get("page"))
 
-        # 设置爬取状态
-        crawler_old_state = crawlerInfo.state
-        crawlerInfo.state = CrawlerNoneTaskState.CRAWLING
-        db.add(crawlerInfo)
-        db.commit()
+            # 设置爬取状态
+            crawler_old_state = crawlerInfo.state
+            crawlerInfo.state = CrawlerNoneTaskState.CRAWLING
+            db.add(crawlerInfo)
+            db.commit()
 
-        # websocket给java发消息
-        ws_msg = {
-            "type": "crawler_none_state_change",
-            "user_id": crawlerInfo.user_id,
-            "crawler_id": request.crawler_id,
-            "crawler_name": crawlerInfo.crawler_name,
-            "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
-            "crawler_new_state": NONE_STATE_TEXT[CrawlerNoneTaskState.CRAWLING]
-        }
-        await java_ws.send(ws_msg)
-
-        # 执行爬取
-        news_list = service.crawl_integration(
-            key_word=crawlerInfo.key_word,
-            sources=sources,
-            page=page
-        )
-
-        # 设置爬取状态
-        crawler_old_state = CrawlerNoneTaskState.CRAWLING
-        crawlerInfo.state = CrawlerNoneTaskState.CLEANING
-        db.add(crawlerInfo)
-        db.commit()
-
-        # websocket给java发消息
-        ws_msg = {
-            "type": "crawler_none_state_change",
-            "user_id": crawlerInfo.user_id,
-            "crawler_id": request.crawler_id,
-            "crawler_name": crawlerInfo.crawler_name,
-            "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
-            "crawler_new_state": NONE_STATE_TEXT[CrawlerNoneTaskState.CLEANING]
-        }
-        await java_ws.send(ws_msg)
-
-        # 转换为字典列表
-        data_list = [news.model_dump() for news in news_list]
-
-        # 返回结果
-        return {
-            "code": 1,
-            "msg": "success",
-            "data": {
-                "dataList": data_list
+            # websocket给java发消息
+            ws_msg = {
+                "type": "crawler_none_state_change",
+                "user_id": crawlerInfo.user_id,
+                "crawler_id": request.crawler_id,
+                "crawler_name": crawlerInfo.crawler_name,
+                "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
+                "crawler_new_state": NONE_STATE_TEXT[CrawlerNoneTaskState.CRAWLING]
             }
-        }
+            await java_ws.send(ws_msg)
+
+            # 执行爬取
+            news_list = service.crawl_integration(
+                key_word=crawlerInfo.key_word,
+                sources=sources,
+                page=page
+            )
+
+            # 设置爬取状态
+            crawler_old_state = CrawlerNoneTaskState.CRAWLING
+            crawlerInfo.state = CrawlerNoneTaskState.CLEANING
+            db.add(crawlerInfo)
+            db.commit()
+
+            # websocket给java发消息
+            ws_msg = {
+                "type": "crawler_none_state_change",
+                "user_id": crawlerInfo.user_id,
+                "crawler_id": request.crawler_id,
+                "crawler_name": crawlerInfo.crawler_name,
+                "crawler_old_state": NONE_STATE_TEXT[crawler_old_state],
+                "crawler_new_state": NONE_STATE_TEXT[CrawlerNoneTaskState.CLEANING]
+            }
+            await java_ws.send(ws_msg)
+
+            # 转换为字典列表
+            data_list = [news.model_dump() for news in news_list]
+
+            # 返回结果
+            return Result.successDataList(dataList=data_list)
+
+        elif request.crawler_way == "cron":
+            # 获取爬虫信息
+            crawlerInfo = db.query(CrawlerCron).filter(CrawlerCron.crawler_id == request.crawler_id).first()
+            if not crawlerInfo:
+                return Result.error(msg="未找到对应舆情预警任务！")
+
+            if crawlerInfo.state != CrawlerCronTaskState.WAITTING :
+                return Result.error(msg=f"舆情预警任务状态错误：要求状态为{CRON_STATE_TEXT[CrawlerCronTaskState.WAITTING]},当前状态为：{CRON_STATE_TEXT[crawlerInfo.state]}！")
+
+            # 读取参数
+            params_dict = crawlerInfo.params
+            sources = list(params_dict.get("sources"))
+            page = int(params_dict.get("page"))
+
+            # 设置爬取状态
+            crawler_old_state = crawlerInfo.state
+            crawlerInfo.state = CrawlerCronTaskState.CRAWLING
+            db.add(crawlerInfo)
+            db.commit()
+
+            # websocket给java发消息
+            ws_msg = {
+                "type": "crawler_cron_state_change",
+                "user_id": crawlerInfo.user_id,
+                "crawler_id": request.crawler_id,
+                "crawler_name": crawlerInfo.crawler_name,
+                "crawler_old_state": CRON_STATE_TEXT[crawler_old_state],
+                "crawler_new_state": CRON_STATE_TEXT[CrawlerCronTaskState.CRAWLING]
+            }
+            await java_ws.send(ws_msg)
+
+            # 执行爬取
+            keyword = crawlerInfo.key_word
+            keywordGroups = keyword.get("keywordGroups")
+
+            # 遍历分组 + 遍历每个关键词
+            last_lists = []
+            for group in keywordGroups:
+                # 遍历爬取组内的每个词，将搜索结果合并
+                cur_lists = []
+                for word in group:
+                    get_news_list = service.crawl_integration(
+                        key_word=word,
+                        sources=sources,
+                        page=page
+                    )
+                    # 转换为字典列表
+                    clear_news_list = [news.model_dump() for news in get_news_list]
+                    cur_lists.append(clear_news_list)
+                last_lists.append(merge_unique_news(cur_lists))
+
+            news_list = list_intersect(last_lists)
+
+            # 设置爬取状态
+            crawler_old_state = CrawlerCronTaskState.CRAWLING
+            crawlerInfo.state = CrawlerCronTaskState.CLEANING
+            db.add(crawlerInfo)
+            db.commit()
+
+            # websocket给java发消息
+            ws_msg = {
+                "type": "crawler_none_state_change",
+                "user_id": crawlerInfo.user_id,
+                "crawler_id": request.crawler_id,
+                "crawler_name": crawlerInfo.crawler_name,
+                "crawler_old_state": CRON_STATE_TEXT[crawler_old_state],
+                "crawler_new_state": CRON_STATE_TEXT[CrawlerCronTaskState.CLEANING]
+            }
+            await java_ws.send(ws_msg)
+
+            # 返回结果
+            return Result.successDataList(dataList=news_list)
+        else:
+            return Result.error(f"无法识别的任务类型：{request.crawler_way}!")
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
