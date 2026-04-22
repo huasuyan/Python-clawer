@@ -143,57 +143,42 @@ async def run_integration(request: CrawlerIntegrationRequest, db: Session = Depe
 
             # 获取参数和关键词
             params = setting.params
-            keywords = setting.key_word
+            keywordGroups = setting.key_word
             sources = params.get("sources", ["综合"])
             page = params.get("page", 1)
 
-            # 执行爬取 - 处理关键词组
-            news_list = []
-            if isinstance(keywords, dict) and "keywordGroups" in keywords:
-                # 关键词组逻辑
-                keywordGroups = keywords.get("keywordGroups", [])
-                last_lists = []
-
-                for group in keywordGroups:
-                    cur_lists = []
-                    for word in group:
-                        get_news_list = service.crawl_integration(
-                            key_word=word,
-                            sources=sources,
-                            page=page
-                        )
-                        clear_news_list = [news.model_dump() for news in get_news_list]
-                        cur_lists.append(clear_news_list)
-                    last_lists.append(merge_unique_news(cur_lists))
-
-                news_list = list_intersect(last_lists)
-            elif isinstance(keywords, list):
-                # 简单关键词列表
-                for keyword in keywords:
-                    crawled_news = service.crawl_integration(
-                        key_word=keyword,
+            # 遍历分组 + 遍历每个关键词
+            last_lists = []
+            for group in keywordGroups:
+                # 遍历爬取组内的每个词，将搜索结果合并
+                cur_lists = []
+                for word in group:
+                    get_news_list = service.crawl_integration(
+                        key_word=word,
                         sources=sources,
                         page=page
                     )
-                    news_list.extend([news.model_dump() for news in crawled_news])
-            else:
-                # 单个关键词
-                crawled_news = service.crawl_integration(
-                    key_word=str(keywords),
-                    sources=sources,
-                    page=page
-                )
-                news_list = [news.model_dump() for news in crawled_news]
+                    # 转换为字典列表
+                    clear_news_list = [news.model_dump() for news in get_news_list]
+                    cur_lists.append(clear_news_list)
+                last_lists.append(merge_unique_news(cur_lists))
+
+            news_list = list_intersect(last_lists)
+
 
             # 使用AI补全数据
+            i = 1
             enriched_data_list = []
             for news_dict in news_list:
                 url = news_dict.get("url", "")
 
                 # AI补全数据
+                print(f"正在补全第{i}条数据，补全前数据为{news_dict}")
                 enriched_data = ai_service.enrich_news_data(url, news_dict)
                 enriched_data["special_report_id"] = None
                 enriched_data["alert_id"] = request.task_id
+                print(f"第{i}条数据补全完成，补全后数据为{enriched_data}")
+                i = i + 1
 
                 enriched_data_list.append(enriched_data)
 
@@ -341,6 +326,7 @@ async def run_integration(request: CrawlerIntegrationRequest, db: Session = Depe
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"爬取失败: {str(e)}")
 
+@router.get("")
 
 @router.get("/test")
 async def test_crawler():
