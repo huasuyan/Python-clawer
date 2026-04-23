@@ -150,6 +150,7 @@ async def generate_report(special_report_id: int, db: Session = Depends(get_db))
             news_list=news_list,
             clean_data_list=clean_data_list,
             special_report_id=special_report_id,
+            report_type = "即时报告" if report_setting.report_type == 1 else "定时报告",
             keywords=monitor_keywords
         )
         

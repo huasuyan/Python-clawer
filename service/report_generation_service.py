@@ -129,7 +129,7 @@ class ReportGenerationService:
         }
     
     def generate_report(self, news_list: List[Dict], clean_data_list: List[Dict], 
-                       special_report_id: int, keywords: List[str]) -> Dict:
+                       special_report_id: int, report_type: str, keywords: List[str]) -> Dict:
         """
         生成舆情报告
         
@@ -152,7 +152,7 @@ class ReportGenerationService:
             "special_report_id": special_report_id,
             "report_name": f"舆情报告_{datetime.now().strftime('%Y%m%d')}",
             "monitor_keywords": json.dumps(keywords, ensure_ascii=False),
-            "report_type": "综合报告",
+            "report_type": report_type,
             "brief_summary": self._generate_brief_summary(stats),
             "monitor_summary": self._generate_monitor_summary(stats),
             "opinion_trend": self._generate_opinion_trend(news_list, stats),
