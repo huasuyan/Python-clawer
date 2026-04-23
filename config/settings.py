@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # 通义千问API配置
     QWEN_API_KEY: str = ""  # 通义千问API密钥
 
+    SAVE_MODE:str = "add"
+
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'

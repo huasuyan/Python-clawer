@@ -1,7 +1,6 @@
 def merge_unique_news(new_items_list, unique_key="url"):
     """
     合并多个新闻列表，全局去重
-    自动兼容嵌套列表，彻底解决 'list' object has no attribute 'get'
     """
     result = []
     seen = set()
@@ -27,7 +26,6 @@ def merge_unique_news(new_items_list, unique_key="url"):
 def list_intersect(lists, unique_key="url"):
     """
     传入 N 个列表，返回它们的交集（按 unique_key）
-    自动处理嵌套列表，彻底解决 get() 报错
     """
     if not lists:
         return []
