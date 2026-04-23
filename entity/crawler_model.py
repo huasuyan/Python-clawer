@@ -26,6 +26,7 @@ class NewsData(Base):
 
     news_id = Column(BigInteger, primary_key=True, autoincrement=True, comment="新闻ID")
     special_report_id = Column(BigInteger, nullable=True, comment="专题报告ID")
+    is_report_need = Column(Integer, nullable=True, comment="是否是需要生成报告的新闻")
     alert_id = Column(BigInteger, nullable=True, comment="预警ID")
     title = Column(String(500), nullable=True, comment="标题")
     content = Column(Text, nullable=True, comment="内容")
@@ -40,6 +41,37 @@ class NewsData(Base):
     article_type = Column(String(100), nullable=True, comment="文章类型")
     source_url = Column(String(500), nullable=True, comment="来源URL")
     create_time = Column(DateTime, nullable=False, server_default=func.current_timestamp(), comment="创建时间")
+
+
+class ClearData(Base):
+    __tablename__ = "clear_data"
+
+    clear_id = Column(BigInteger, primary_key=True, autoincrement=True, comment="清洗数据ID")
+    news_id = Column(BigInteger, nullable=False, comment="新闻ID（外键）")
+    sensitivity_level = Column(Integer, nullable=True, comment="敏感度等级：0不敏感 1低敏感 2中敏感 3高敏感")
+    sensitivity_label = Column(String(200), nullable=True, comment="敏感标签分类")
+    sentiment_type = Column(Integer, nullable=True, comment="情绪极性：-1负面 0中性 1正面")
+
+
+class ReportResult(Base):
+    __tablename__ = "report_result"
+
+    report_id = Column(BigInteger, primary_key=True, autoincrement=True, comment="报告ID")
+    special_report_id = Column(BigInteger, nullable=False, comment="专题报告ID")
+    report_name = Column(String(200), nullable=True, comment="报告名称")
+    monitor_keywords = Column(JSON, nullable=True, comment="监测关键词")
+    report_type = Column(String(50), nullable=True, comment="报告类型")
+    brief_summary = Column(Text, nullable=True, comment="简版概述")
+    monitor_summary = Column(Text, nullable=True, comment="监测概述")
+    opinion_trend = Column(Text, nullable=True, comment="舆情发展趋势")
+    source_media_analysis = Column(Text, nullable=True, comment="来源媒体分析")
+    emotion_analysis = Column(Text, nullable=True, comment="情绪分析")
+    region_distribution = Column(Text, nullable=True, comment="地域分布")
+    hot_analysis_words = Column(Text, nullable=True, comment="热分析词")
+    hot_information = Column(Text, nullable=True, comment="热门信息")
+    disposal_opinions = Column(Text, nullable=True, comment="处置意见")
+    create_time = Column(DateTime, nullable=False, server_default=func.current_timestamp(), comment="创建时间")
+    update_time = Column(DateTime, nullable=True, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), comment="更新时间")
 
 
 class CrawlerNone(Base):
