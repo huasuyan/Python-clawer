@@ -143,7 +143,7 @@ async def run_integration(request: CrawlerIntegrationRequest, db: Session = Depe
 
             # 获取参数和关键词
             params = setting.params
-            keywordGroups = setting.key_word
+            keywordGroups = setting.key_word.get("keywordGroups")
             sources = params.get("sources", ["综合"])
             page = params.get("page", 1)
 

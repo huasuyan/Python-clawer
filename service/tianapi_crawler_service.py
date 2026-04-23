@@ -117,7 +117,7 @@ class TianApiCrawlerService:
                 print(f"  第 {current_page} 页...")
                 
                 # 固定num=50
-                result = self.fetch_news(source, key_word, current_page, num=50)
+                result = self.fetch_news(source, key_word, current_page, num=5)
                 
                 if not result:
                     print(f"  第 {current_page} 页获取失败，停止该数据源")
