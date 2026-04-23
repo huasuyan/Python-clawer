@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Optional
+from datetime import datetime
 
 
 class CrawlerIntegrationRequest(BaseModel):
@@ -8,6 +11,8 @@ class CrawlerIntegrationRequest(BaseModel):
     task_id: int = Field(..., description="任务ID")
 
     task_way: str = Field(..., description="任务类型: report/alert")
+
+    filter_time: Optional[str] = Field(None, description="过滤时间，格式：YYYY-MM-DD HH:MM:SS，只保留晚于此时间的新闻")
 
 
 class NewsItem(BaseModel):

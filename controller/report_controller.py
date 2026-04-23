@@ -157,32 +157,15 @@ async def generate_report(special_report_id: int, db: Session = Depends(get_db))
         logging.info("保存报告到数据库...")
 
 
-        if settings.SAVE_MODE == "add":
-            report_record = ReportResult(**report_data)
-            db.add(report_record)
-            db.flush()
-            report_id = report_record.report_id
-        else:
-            # 检查是否已存在报告
-            existing_report = db.query(ReportResult).filter(
-                ReportResult.special_report_id == special_report_id
-            ).first()
 
-            if existing_report:
-                # 更新现有报告
-                for key, value in report_data.items():
-                    if key != "special_report_id":
-                        setattr(existing_report, key, value)
-                report_id = existing_report.report_id
-            else:
-                # 创建新报告
-                report_record = ReportResult(**report_data)
-                db.add(report_record)
-                db.flush()
-                report_id = report_record.report_id
+        # 新增报告
+        report_record = ReportResult(**report_data)
+        db.add(report_record)
+        db.flush()
+        report_id = report_record.report_id
 
-            db.commit()
-            logging.info(f"报告生成完成，report_id: {report_id}")
+        db.commit()
+        print(f"报告生成完成，report_id: {report_id}")
 
 
         # 7. 将新闻标记为不需要生成报告
