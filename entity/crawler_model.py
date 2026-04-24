@@ -10,6 +10,7 @@ class SpecialReportSetting(Base):
     monitor_keywords = Column(JSON, nullable=False, comment="监控关键词")
     params = Column(JSON, nullable=False, comment="参数配置")
     data_source = Column(String(500), nullable=False, comment="数据源")
+    report_type =Column(Integer, nullable=False, comment="报告类型")
 
 
 class SpecialAlertSetting(Base):
