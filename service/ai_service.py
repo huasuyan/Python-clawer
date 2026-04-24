@@ -59,7 +59,14 @@ class AIService:
         source = basic_data.get("source", "")
         publish_time = basic_data.get("publishTime", "")
 
-        prompt = f"""你是舆情分析专家，严格按JSON输出，不要多余文字：
+        prompt = f"""你是舆情分析专家，严格按JSON输出，不要多余文字、不要解释、不要换行注释。
+字段强制规范要求：
+1.region：必须输出【中国标准地级行政区】格式，统一规范地名、去别名、去简称、无重复、无冗余，仅保留地级市/自治州/地区/盟标准名称，无省市重复堆砌、无自定义俗称；
+2.article_type：仅固定取值：新闻/资讯/评论/视频/推广；
+3.video：严格布尔值true或false；
+4.comment_count：纯数字，无字符；
+5.content：控制在150字以内精简摘要。
+
 {{
     "title": "文章标题",
     "content": "150字内摘要",
@@ -68,7 +75,7 @@ class AIService:
     "video": true/false,
     "source": "来源平台",
     "comment_count": 数字,
-    "region": "地区",
+    "region": "中国标准地级行政区（规范地级市名称，统一格式、杜绝重复地名）",
     "article_type": "新闻/资讯/评论/视频/推广"
 }}
 
@@ -79,7 +86,7 @@ URL: {url}
 来源: {source}
 发布时间: {publish_time}
 
-请根据以上信息，补全并返回JSON格式的数据。"""
+仅返回合规JSON，禁止额外内容。"""
 
         return prompt
 
