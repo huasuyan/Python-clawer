@@ -198,6 +198,7 @@ async def run_integration(request: CrawlerIntegrationRequest, db: Session = Depe
     参数说明：
     - task_id: 任务ID（必填）
     - task_way: 任务类型，可选值：report/alert（必填）
+    - filter_time:
 
     说明：
     - task_way为report时，访问special_report_setting表

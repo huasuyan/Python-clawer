@@ -22,7 +22,7 @@ class TianApiCrawlerService:
             "社会": "https://apis.tianapi.com/social/index"
         }
     
-    def fetch_news(self, source: str, word: str, page: int, num: int = 50) -> Dict:
+    def fetch_news(self, source: str, word: str, page: int, num: int = 20) -> Dict:
         """
         获取新闻数据
 
@@ -117,7 +117,7 @@ class TianApiCrawlerService:
                 print(f"  第 {current_page} 页...")
                 
                 # 固定num=50
-                result = self.fetch_news(source, key_word, current_page, num=50)
+                result = self.fetch_news(source, key_word, current_page)
                 
                 if not result:
                     print(f"  第 {current_page} 页获取失败，停止该数据源")
@@ -141,8 +141,8 @@ class TianApiCrawlerService:
                 source_total += len(news_list)
                 print(f"  第 {current_page} 页获取 {len(news_list)} 条数据")
                 
-                # 如果返回数量不足50，说明没有更多数据了
-                if len(news_list) < 50:
+                # 如果返回数量不足10，说明没有更多数据了
+                if len(news_list) < 10:
                     print(f"  返回数量不足50条，停止该数据源")
                     break
                 
