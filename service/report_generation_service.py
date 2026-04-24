@@ -151,7 +151,7 @@ class ReportGenerationService:
         report_data = {
             "special_report_id": special_report_id,
             "report_name": f"舆情报告_{datetime.now().strftime('%Y%m%d')}",
-            "monitor_keywords": json.dumps(keywords, ensure_ascii=False),
+            "monitor_keywords": keywords,
             "report_type": report_type,
             "brief_summary": self._generate_brief_summary(stats),
             "monitor_summary": self._generate_monitor_summary(stats),
