@@ -348,7 +348,7 @@ async def run_integration(request: CrawlerIntegrationRequest, db: Session = Depe
             # AI清洗并保存到clear_data表
             clean_and_save_news(news_ids, enriched_data_list, db)
 
-            setting.latest_news_time = enriched_data_list[0].publish_time
+            setting.latest_news_time = enriched_data_list[0].get("publish_time")
             db.add(setting)
             db.commit()
 
