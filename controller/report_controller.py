@@ -200,8 +200,9 @@ async def generate_report(special_report_id: int, db: Session = Depends(get_db))
             "source_media_analysis": result_report.source_media_analysis,
             "emotion_analysis": result_report.emotion_analysis,
             "region_distribution": result_report.region_distribution,
-            "hot_analysis_words": result_report.hot_analysis_words,
-            "hot_information": result_report.hot_information,
+            "region_distribution_list": result_report.region_distribution_list,
+            "hot_analysis_words_list": result_report.hot_analysis_words_list,
+            "hot_information_list": result_report.hot_information_list,
             "disposal_opinions": result_report.disposal_opinions,
             "create_time": result_report.create_time.strftime("%Y-%m-%d %H:%M:%S") if result_report.create_time else None,
             "update_time": result_report.update_time.strftime("%Y-%m-%d %H:%M:%S") if result_report.update_time else None
