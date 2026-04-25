@@ -4,6 +4,7 @@ AI服务 - 使用通义千问API补全新闻数据
 import requests
 import json
 from typing import Dict, Optional
+import re
 from datetime import datetime
 import logging
 
@@ -166,6 +167,18 @@ URL: {url}
             # 解析JSON
             ai_data = json.loads(ai_result)
 
+            # 处理地区字段：统一格式为【重庆】【北京】，去除末尾的"市"，中国/全国统一为【全国】
+            region = ai_data.get("region")
+            if region:
+                # 去除首尾空白
+                region = region.strip()
+
+                # 1. 把【重庆市】【北京市】→【重庆】【北京】
+                region = re.sub(r'【(.*?)市】', r'【\1】', region)
+
+                # 2. 把【中国】统一替换为【全国】（同时兼容已经是【全国】的情况）
+                region = re.sub(r'【中国】', r'【全国】', region)
+
             # 构建最终数据
             enriched_data = {
                 "title": ai_data.get("title", basic_data.get("title", "")),
@@ -174,9 +187,9 @@ URL: {url}
                 "platform": self._extract_platform(url),
                 "source": ai_data.get("source", basic_data.get("source", "")),
                 "publisher": ai_data.get("publisher"),
-                "publish_time": self._parse_publish_time(ai_data.get("publish_time")),
+                "publish_time": self._parse_publish_time(basic_data.get("publishTime") if "publishTime" in basic_data else ai_data.get("publish_time")),
                 "comment": ai_data.get("comment_count"),
-                "region": ai_data.get("region"),
+                "region": region,
                 "original_url": url,
                 "article_type": ai_data.get("article_type"),
                 "source_url": url,
