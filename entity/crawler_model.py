@@ -20,6 +20,7 @@ class SpecialAlertSetting(Base):
     key_word = Column(JSON, nullable=False, comment="关键词")
     params = Column(JSON, nullable=False, comment="参数配置")
     target_source = Column(String(20), nullable=False, comment="目标数据源")
+    latest_news_time = Column(DateTime, nullable=True, comment="最后一条新闻的发布时间")
 
 
 class NewsData(Base):
