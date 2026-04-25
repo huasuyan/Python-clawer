@@ -348,6 +348,10 @@ async def run_integration(request: CrawlerIntegrationRequest, db: Session = Depe
             # AI清洗并保存到clear_data表
             clean_and_save_news(news_ids, enriched_data_list, db)
 
+            setting.latest_news_time = enriched_data_list[0].publish_time
+            db.add(setting)
+            db.commit()
+
             # 返回null而不是数据列表
             return Result.success(data=None, msg=f"成功处理{len(news_ids)}条新闻")
 
