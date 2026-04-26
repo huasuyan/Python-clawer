@@ -22,7 +22,7 @@ class TianApiCrawlerService:
             "社会": "https://apis.tianapi.com/social/index"
         }
     
-    def fetch_news(self, source: str, word: str, page: int, num: int = 20) -> Dict:
+    def fetch_news(self, source: str, word: str, page: int, num: int = 5) -> Dict:
         """
         获取新闻数据
 

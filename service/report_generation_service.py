@@ -6,6 +6,7 @@ import logging
 from typing import Dict, List, Optional
 from collections import Counter
 from datetime import datetime
+import jieba
 
 
 class ReportGenerationService:
@@ -159,8 +160,9 @@ class ReportGenerationService:
             "source_media_analysis": self._generate_source_media_analysis(stats),
             "emotion_analysis": self._generate_emotion_analysis(stats),
             "region_distribution": self._generate_region_distribution(stats),
-            "hot_analysis_words": self._generate_hot_words(news_list),
-            "hot_information": self._generate_hot_information(news_list, clean_data_list),
+            "region_distribution_list": self._generate_region_distribution_list(stats),
+            "hot_analysis_words_list": self._generate_hot_words_list(news_list),
+            "hot_information_list": self._generate_hot_information_list(news_list, clean_data_list),
             "disposal_opinions": self._generate_disposal_opinions(stats)
         }
         
@@ -325,8 +327,28 @@ class ReportGenerationService:
 
         return distribution
 
-    def _generate_hot_words(self, news_list: List[Dict]) -> str:
-        """生成热分析词"""
+    def _generate_region_distribution_list(self, stats: Dict) -> str:
+        """生成地域分布列表（JSON格式）"""
+        region_stats = stats["region_stats"]
+        total = sum(region_stats.values()) if region_stats else 0
+
+        if not region_stats:
+            return json.dumps([], ensure_ascii=False)
+
+        distribution_list = []
+        for rank, (region, count) in enumerate(region_stats.items(), 1):
+            percentage = (count / total * 100) if total > 0 else 0
+            distribution_list.append({
+                "rank": rank,
+                "name": region,
+                "value": count,
+                "percent": f"{percentage:.2f}%"
+            })
+
+        return json.dumps(distribution_list, ensure_ascii=False)
+
+    def _generate_hot_words_list(self, news_list: List[Dict]) -> str:
+        """生成热分析词列表（JSON格式）"""
         # 提取所有标题和内容中的词
         all_text = []
         for news in news_list:
@@ -334,25 +356,31 @@ class ReportGenerationService:
             content = news.get("content", "")
             all_text.append(title + " " + content)
 
-        # 简单的词频统计（实际应该使用jieba分词）
+        # 使用jieba分词进行词频统计
         word_counter = Counter()
+        # 停用词列表
+        stop_words = {'的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一', '一个', '上', '也', '很', '到', '说', '要', '去', '你', '会', '着', '没有', '看', '好', '自己', '这'}
+
         for text in all_text:
-            # 简单按空格和标点分词
-            words = text.replace("，", " ").replace("。", " ").replace("、", " ").split()
+            # 使用jieba分词
+            words = jieba.cut(text)
             for word in words:
-                if len(word) >= 2:  # 只统计2个字以上的词
+                # 过滤停用词和长度小于2的词
+                if len(word) >= 2 and word not in stop_words and word.strip():
                     word_counter[word] += 1
 
-        # 生成热词分析
-        hot_words = "热词分析（前20）：\n"
-        for idx, (word, count) in enumerate(word_counter.most_common(20), 1):
-            percentage = (count / len(news_list) * 100) if news_list else 0
-            hot_words += f"{idx}. {word}：出现{count}次，占比{percentage:.1f}%\n"
+        # 生成热词列表（前20）
+        hot_words_list = []
+        for word, count in word_counter.most_common(20):
+            hot_words_list.append({
+                "name": word,
+                "value": count
+            })
 
-        return hot_words
+        return json.dumps(hot_words_list, ensure_ascii=False)
 
-    def _generate_hot_information(self, news_list: List[Dict], clean_data_list: List[Dict]) -> str:
-        """生成热门信息"""
+    def _generate_hot_information_list(self, news_list: List[Dict], clean_data_list: List[Dict]) -> str:
+        """生成热门信息列表（JSON格式）"""
         # 按评论数排序（如果有的话）
         news_with_clean = []
         for news in news_list:
@@ -366,7 +394,7 @@ class ReportGenerationService:
             reverse=True
         )[:10]
 
-        hot_info = "热门信息TOP10：\n\n"
+        hot_info_list = []
         for idx, news in enumerate(sorted_news, 1):
             title = news.get("title", "未知标题")
             platform = news.get("platform", "未知平台")
@@ -374,13 +402,21 @@ class ReportGenerationService:
             sentiment = news.get("sentiment_type", 0)
             sentiment_text = {1: "正面", 0: "中性", -1: "负面"}.get(sentiment, "未知")
             publish_time = news.get("publish_time", "未知时间")
-            comment_count = news.get("comment", 0) or 0
 
-            hot_info += f"{idx}. {title}\n"
-            hot_info += f"   平台：{platform} | 发布者：{publisher} | 情绪：{sentiment_text}\n"
-            hot_info += f"   时间：{publish_time} | 评论数：{comment_count}\n\n"
+            # 格式化时间
+            if isinstance(publish_time, datetime):
+                publish_time = publish_time.strftime("%Y-%m-%d %H:%M:%S")
 
-        return hot_info
+            hot_info_list.append({
+                "rank": idx,
+                "title": title,
+                "platform": platform,
+                "account": publisher,
+                "type": sentiment_text,
+                "publishTime": str(publish_time)
+            })
+
+        return json.dumps(hot_info_list, ensure_ascii=False)
 
     def _generate_disposal_opinions(self, stats: Dict) -> str:
         """生成处置意见"""
